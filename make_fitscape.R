@@ -12,10 +12,17 @@ plant_fit_data <- read.xlsx("/Users/keiranmaskell/Desktop/P_syring/fitness_lands
 
 plant_fitness_master <- read.xlsx("/Users/keiranmaskell/Desktop/P_syring/Data/Plant_Fitness_master.xlsx",sheetIndex = 1)
 
+write.csv(GA_master, "/Users/keiranmaskell/Desktop/P_syring/Data/GA_master.csv", row.names=FALSE)
+write.csv(plant_fitness_master, "/Users/keiranmaskell/Desktop/P_syring/Data/Plant_fitness_master.csv", row.names=FALSE)
+
+GA_master <- read.csv("/Users/keiranmaskell/Desktop/P_syring/Data/GA_master.csv")
+plant_fitness_master <- read.csv("/Users/keiranmaskell/Desktop/P_syring/Data/Plant_fitness_master.csv")
+
 #GA_fitness <- data.frame(fake_data)
 #GA_fitness <- GA_fitness[1:64,]
 
 GA_fitness <- data.frame(GA_master)
+
 
 #add log.CFU.cm2 column
 #GA_fitness <- GA_fitness[,'Colony.count']*10^(as.numeric(GA_fitness[,'Diln']))
@@ -276,7 +283,7 @@ flatlist[1]
 # )
 
 
-boxplot(result2$Pidiq_fitness.Arcsine.transformed.data)
+#boxplot(result2$Pidiq_fitness.Arcsine.transformed.data)
 
 #Disease severity (Pidiq)
 Pidiq_fitness_pass$Treatment <- paste(Pidiq_fitness_pass$Inoculum,Pidiq_fitness_pass$Flat)
