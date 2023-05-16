@@ -2,26 +2,39 @@
 setwd('/Users/keiranmaskell/Desktop/P_syring/fitness_landscaper')
 rm(list=ls())
 
-library(xlsx)
+source('init.R')
+#library(xlsx)
 #bac_fit_data <- read.xlsx("/Users/keiranmaskell/Downloads/For_Keiran/GA_MinScreen4_B3i1_2023-02-24 copy.xlsx", sheetIndex = 1)
-fake_data <- read.xlsx("/Users/keiranmaskell/Desktop/P_syring/fitness_landscaper/fake_data.xlsx", sheetIndex = 1)
+# fake_data <- read.xlsx("/Users/keiranmaskell/Desktop/P_syring/fitness_landscaper/fake_data.xlsx", sheetIndex = 1)
 
-GA_master <- read.xlsx("/Users/keiranmaskell/Desktop/P_syring/Data/GA_master.xlsx", sheetIndex = 1)
+# GA_master <- read.xlsx("/Users/keiranmaskell/Desktop/P_syring/Data/GA_master.xlsx", sheetIndex = 1)
 
-plant_fit_data <- read.xlsx("/Users/keiranmaskell/Desktop/P_syring/fitness_landscaper/fake_pidiq_data.xlsx",sheetIndex = 1)
+# plant_fit_data <- read.xlsx("/Users/keiranmaskell/Desktop/P_syring/fitness_landscaper/fake_pidiq_data.xlsx",sheetIndex = 1)
 
-plant_fitness_master <- read.xlsx("/Users/keiranmaskell/Desktop/P_syring/Data/Plant_Fitness_master.xlsx",sheetIndex = 1)
+# plant_fitness_master <- read.xlsx("/Users/keiranmaskell/Desktop/P_syring/Data/Plant_Fitness_master.xlsx",sheetIndex = 1)
 
-write.csv(GA_master, "/Users/keiranmaskell/Desktop/P_syring/Data/GA_master.csv", row.names=FALSE)
-write.csv(plant_fitness_master, "/Users/keiranmaskell/Desktop/P_syring/Data/Plant_fitness_master.csv", row.names=FALSE)
+# write.csv(GA_master, "/Users/keiranmaskell/Desktop/P_syring/Data/GA_master.csv", row.names=FALSE)
+# write.csv(plant_fitness_master, "/Users/keiranmaskell/Desktop/P_syring/Data/Plant_fitness_master.csv", row.names=FALSE)
 
-GA_master <- read.csv("/Users/keiranmaskell/Desktop/P_syring/Data/GA_master.csv")
-plant_fitness_master <- read.csv("/Users/keiranmaskell/Desktop/P_syring/Data/Plant_fitness_master.csv")
+# GA_master <- read.csv("/Users/keiranmaskell/Desktop/P_syring/Data/GA_master.csv")
+# plant_fitness_master <- read.csv("/Users/keiranmaskell/Desktop/P_syring/Data/Plant_fitness_master.csv")
 
-#GA_fitness <- data.frame(fake_data)
-#GA_fitness <- GA_fitness[1:64,]
+# #GA_fitness <- data.frame(fake_data)
+# #GA_fitness <- GA_fitness[1:64,]
 
-GA_fitness <- data.frame(GA_master)
+# GA_fitness <- data.frame(GA_master)
+
+source('fxn_repo.R')
+
+data_list <- data_loader(bac_in_fp="/Users/keiranmaskell/Desktop/P_syring/Data/GA_master.xlsx",
+            plant_in_fp="/Users/keiranmaskell/Desktop/P_syring/Data/Plant_Fitness_master.xlsx",
+            bac_out_fp="/Users/keiranmaskell/Desktop/P_syring/Data/GA_master.csv",
+            plant_out_fp="/Users/keiranmaskell/Desktop/P_syring/Data/Plant_fitness_master.csv")
+GA_fitness <- data.frame(data_list[[1]])
+Pidiq_fitness <- data.frame(data_list[[2]])
+
+GA_fitness <- data_list[[1]]
+Pidiq_fitness <- data_list[[2]]
 
 
 #add log.CFU.cm2 column
@@ -54,7 +67,7 @@ View(GA_fitness_wNAs)
 #View(GA_fitness)
 
 #Pidiq_fitness <- data.frame(plant_fit_data)
-Pidiq_fitness <- data.frame(plant_fitness_master)
+Pidiq_fitness <- data.frame(Pidiq_fitness)
 
 #add arcsine transformed column
 Pidiq_fitness[,'Arcsine.transformed.data'] <- asin(sqrt(Pidiq_fitness[,'YellowedArea']/(Pidiq_fitness[,'YellowedArea'] + Pidiq_fitness[,'GreenArea'])))/1.507
