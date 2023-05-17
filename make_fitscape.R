@@ -36,45 +36,52 @@ Pidiq_fitness <- data.frame(data_list[[2]])
 GA_fitness <- data_list[[1]]
 Pidiq_fitness <- data_list[[2]]
 
-
-#add log.CFU.cm2 column
-#GA_fitness <- GA_fitness[,'Colony.count']*10^(as.numeric(GA_fitness[,'Diln']))
-#bec <- log((as.numeric(GA_fitness[,'Colony.count'])*(1/as.numeric(GA_fitness[,'Diln']))*80)/1)
-
-
-GA_fitness <- data.frame(GA_fitness[,1:11], 'log.CFU.cm2'=
-                         ifelse(as.numeric(GA_fitness[,'Diln'])==0, log10((as.numeric(GA_fitness[,'Colony.count'])*80)/1)
-                                                             ,log10((as.numeric(GA_fitness[,'Colony.count'])*(1/as.numeric(10^(-1)*GA_fitness[,'Diln']))*80)/1)),
-                                                             GA_fitness[,12:ncol(GA_fitness)])
-
-
-GA_fitness[,'Colony.count'] <- as.numeric(GA_fitness[,'Colony.count'])
-GA_fitness[,'Diln'] <- as.numeric(GA_fitness[,'Diln'])
-
-
-#GA_fitness <- data.frame(GA_fitness[,1:15],'log.CFU.cm2'=log10(((GA_fitness[,'Colony.count']) * (1/(10^((-1)*GA_fitness[,'Diln']))) * (80))/1))
-GA_fitness <- data.frame(GA_fitness,'log.CFU.cm2'=log10(((GA_fitness[,'Colony.count']) * (1/(10^((-1)*GA_fitness[,'Diln']))) * (80))/1))
-GA_fitness
-
-
-#clean up NAs and weird values created by taking ln(0)
-GA_fitness_wNAs <- GA_fitness
-GA_fitness <- subset(GA_fitness, GA_fitness[,'log.CFU.cm2']!='-Inf')
-GA_fitness <- GA_fitness[complete.cases(GA_fitness[,c("Diln", "Colony.count","log.CFU.cm2")]),]
-row.names(GA_fitness) <- 1:nrow(GA_fitness)
-#GA_fitness[,'log.CFU.cm2']
-View(GA_fitness_wNAs)
 #View(GA_fitness)
+
+
+# #add log.CFU.cm2 column
+# #GA_fitness <- GA_fitness[,'Colony.count']*10^(as.numeric(GA_fitness[,'Diln']))
+# #bec <- log((as.numeric(GA_fitness[,'Colony.count'])*(1/as.numeric(GA_fitness[,'Diln']))*80)/1)
+
+
+# GA_fitness <- data.frame(GA_fitness[,1:11], 'log.CFU.cm2'=
+#                          ifelse(as.numeric(GA_fitness[,'Diln'])==0, log10((as.numeric(GA_fitness[,'Colony.count'])*80)/1)
+#                                                              ,log10((as.numeric(GA_fitness[,'Colony.count'])*(1/as.numeric(10^(-1)*GA_fitness[,'Diln']))*80)/1)),
+#                                                              GA_fitness[,12:ncol(GA_fitness)])
+
+
+# GA_fitness[,'Colony.count'] <- as.numeric(GA_fitness[,'Colony.count'])
+# GA_fitness[,'Diln'] <- as.numeric(GA_fitness[,'Diln'])
+
+
+# #GA_fitness <- data.frame(GA_fitness[,1:15],'log.CFU.cm2'=log10(((GA_fitness[,'Colony.count']) * (1/(10^((-1)*GA_fitness[,'Diln']))) * (80))/1))
+# GA_fitness <- data.frame(GA_fitness,'log.CFU.cm2'=log10(((GA_fitness[,'Colony.count']) * (1/(10^((-1)*GA_fitness[,'Diln']))) * (80))/1))
+# GA_fitness
+
+
+# #clean up NAs and weird values created by taking ln(0)
+# GA_fitness_wNAs <- GA_fitness
+# GA_fitness <- subset(GA_fitness, GA_fitness[,'log.CFU.cm2']!='-Inf')
+# GA_fitness <- GA_fitness[complete.cases(GA_fitness[,c("Diln", "Colony.count","log.CFU.cm2")]),]
+# row.names(GA_fitness) <- 1:nrow(GA_fitness)
+# #GA_fitness[,'log.CFU.cm2']
+# View(GA_fitness_wNAs)
+# #View(GA_fitness)
 
 #Pidiq_fitness <- data.frame(plant_fit_data)
 Pidiq_fitness <- data.frame(Pidiq_fitness)
 
-#add arcsine transformed column
-Pidiq_fitness[,'Arcsine.transformed.data'] <- asin(sqrt(Pidiq_fitness[,'YellowedArea']/(Pidiq_fitness[,'YellowedArea'] + Pidiq_fitness[,'GreenArea'])))/1.507
+# #add arcsine transformed column
+# Pidiq_fitness[,'Arcsine.transformed.data'] <- asin(sqrt(Pidiq_fitness[,'YellowedArea']/(Pidiq_fitness[,'YellowedArea'] + Pidiq_fitness[,'GreenArea'])))/1.507
+
+
+
+GA_fitness <- prepare_GA_data(GA_fitness)
+Pidiq_fitness <- prepare_Pidiq_data(Pidiq_fitness)
+
 
 View(GA_fitness, title = "GA_fitness")
-View(Pidiq_fitness)
-
+View(Pidiq_fitness, title = "Pidiq_fitness")
 
 #bacterial fitness
 #simple barplot
