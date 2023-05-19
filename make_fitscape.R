@@ -79,10 +79,16 @@ Pidiq_fitness <- data.frame(Pidiq_fitness)
 GA_fitness <- prepare_GA_data(GA_fitness)
 Pidiq_fitness <- prepare_Pidiq_data(Pidiq_fitness)
 
+Pidiq_fitness["DPI"] <- as.Date(Pidiq_fitness$Day, format="%m/%d/%Y") - as.Date(Pidiq_fitness$Day.Infected, format ="%m/%d/%Y")
+
+
 #18
 length(GA_fitness)
 names(GA_fitness)
 GA_fitness$log.CFU.cm2
+
+length(Pidiq_fitness)
+names(Pidiq_fitness)
 
 View(GA_fitness, title = "GA_fitness")
 View(Pidiq_fitness, title = "Pidiq_fitness")
@@ -460,7 +466,7 @@ stripchart(K017_d3_y ~ K017_d3_x1,              # Data
 
 
 #K017 Pidiq
-Pidiq_fitness["DPI"] <- as.Date(Pidiq_fitness$Day, format="%m/%d/%Y") - as.Date(Pidiq_fitness$Day.Infected, format ="%m/%d/%Y")
+#Pidiq_fitness["DPI"] <- as.Date(Pidiq_fitness$Day, format="%m/%d/%Y") - as.Date(Pidiq_fitness$Day.Infected, format ="%m/%d/%Y")
 
 
 K017_d3_y <- Pidiq_fitness$Arcsine.transformed.data[Pidiq_fitness$Flat=="K017" & Pidiq_fitness$DPI==3]
@@ -920,6 +926,186 @@ stripchart(K020_d3_y ~K020_d3_x2,              # Data
            col = 4,           # Color of the symbol
            vertical = TRUE,   # Vertical mode
            add = TRUE) 
+
+
+#D5 Pidiq
+#K019 and K020
+
+
+#K019 Pidiq
+
+K019_d3_y <- Pidiq_fitness$Arcsine.transformed.data[Pidiq_fitness$Flat=="K019" & Pidiq_fitness$DPI==5]
+K019_d3_x1 <- Pidiq_fitness$Inoculum[Pidiq_fitness$Flat=="K019" & Pidiq_fitness$DPI==5]
+K019_d3_x2 <- Pidiq_fitness$Plant[Pidiq_fitness$Flat=="K019" & Pidiq_fitness$DPI==5]
+K019_d3_x3 <- Pidiq_fitness$Treatment[Pidiq_fitness$Flat=="K019" & Pidiq_fitness$DPI==5]
+
+
+
+quartz()
+# par(cex.axis=0.5, col.axis="black")
+# boxplot(K019_d3_y ~ K019_d3_x1 + K019_d3_x2 + K019_d3_x3, las=2, outline=FALSE,xlab=NULL,ylab='Arcsin(yellow/green)', main="Flat K019 Pidiq results at 3 dpi (separate treatments)")
+# stripchart(K019_d3_y ~K019_d3_x1 + K019_d3_x2 + K019_d3_x3,              # Data
+#            method = "jitter", # Random noise
+#            pch = 19,          # Pch symbols
+#            col = 4,           # Color of the symbol
+#            vertical = TRUE,   # Vertical mode
+#            add = TRUE)   
+
+par(cex.axis=0.5, col.axis="black")
+boxplot(K019_d3_y ~ K019_d3_x1, las=2, outline=FALSE,xlab=NULL,ylab='Arcsin(yellow/green)', main="Flat K019 Pidiq results at 3 dpi (aggregate by strain)")
+stripchart(K019_d3_y ~K019_d3_x1,              # Data
+           method = "jitter", # Random noise
+           pch = 19,          # Pch symbols
+           col = 4,           # Color of the symbol
+           vertical = TRUE,   # Vertical mode
+           add = TRUE)   
+
+
+quartz()
+par(cex.axis=0.5, col.axis="black")
+boxplot(K019_d3_y ~ K019_d3_x1 + K019_d3_x2, las=2, outline=FALSE,xlab=NULL,ylab='Arcsin(yellow/green)', main="Flat K019 Pidiq results at 3 dpi (aggregate by strain - treatment)")
+stripchart(K019_d3_y ~K019_d3_x1 + K019_d3_x2,              # Data
+           method = "jitter", # Random noise
+           pch = 19,          # Pch symbols
+           col = 4,           # Color of the symbol
+           vertical = TRUE,   # Vertical mode
+           add = TRUE)   
+
+par(cex.axis=0.5, col.axis="black")
+boxplot(K019_d3_y ~ K019_d3_x1 + K019_d3_x3, las=2, outline=FALSE,xlab=NULL,ylab='Arcsin(yellow/green)', main="Flat K019 Pidiq results at 3 dpi (aggregate by strain - plant)")
+stripchart(K019_d3_y ~K019_d3_x1 + K019_d3_x3,              # Data
+           method = "jitter", # Random noise
+           pch = 19,          # Pch symbols
+           col = 4,           # Color of the symbol
+           vertical = TRUE,   # Vertical mode
+           add = TRUE) 
+
+par(cex.axis=0.5, col.axis="black")
+boxplot(K019_d3_y ~ K019_d3_x2, las=2, outline=FALSE,xlab=NULL,ylab='Arcsin(yellow/green)', main="Flat K019 Pidiq results at 3 dpi (aggregate by treatment)")
+stripchart(K019_d3_y ~K019_d3_x2,              # Data
+           method = "jitter", # Random noise
+           pch = 19,          # Pch symbols
+           col = 4,           # Color of the symbol
+           vertical = TRUE,   # Vertical mode
+           add = TRUE) 
+
+par(cex.axis=0.5, col.axis="black")
+boxplot(K019_d3_y ~ K019_d3_x2, las=2, outline=FALSE,xlab=NULL,ylab='Arcsin(yellow/green)', main="Flat K019 Pidiq results at 3 dpi (aggregate by plant)")
+stripchart(K019_d3_y ~K019_d3_x2,              # Data
+           method = "jitter", # Random noise
+           pch = 19,          # Pch symbols
+           col = 4,           # Color of the symbol
+           vertical = TRUE,   # Vertical mode
+           add = TRUE) 
+
+
+
+#K020 Pidiq
+
+K020_d3_y <- Pidiq_fitness$Arcsine.transformed.data[Pidiq_fitness$Flat=="K020" & Pidiq_fitness$DPI==5]
+K020_d3_x1 <- Pidiq_fitness$Inoculum[Pidiq_fitness$Flat=="K020" & Pidiq_fitness$DPI==5]
+K020_d3_x2 <- Pidiq_fitness$Plant[Pidiq_fitness$Flat=="K020" & Pidiq_fitness$DPI==5]
+K020_d3_x3 <- Pidiq_fitness$Treatment[Pidiq_fitness$Flat=="K020" & Pidiq_fitness$DPI==5]
+
+
+
+quartz()
+# par(cex.axis=0.5, col.axis="black")
+# boxplot(K020_d3_y ~ K020_d3_x1 + K020_d3_x2 + K020_d3_x3, las=2, outline=FALSE,xlab=NULL,ylab='Arcsin(yellow/green)', main="Flat K020 Pidiq results at 3 dpi (separate treatments)")
+# stripchart(K020_d3_y ~K020_d3_x1 + K020_d3_x2 + K020_d3_x3,              # Data
+#            method = "jitter", # Random noise
+#            pch = 19,          # Pch symbols
+#            col = 4,           # Color of the symbol
+#            vertical = TRUE,   # Vertical mode
+#            add = TRUE)   
+
+par(cex.axis=0.5, col.axis="black")
+boxplot(K020_d3_y ~ K020_d3_x1, las=2, outline=FALSE,xlab=NULL,ylab='Arcsin(yellow/green)', main="Flat K020 Pidiq results at 3 dpi (aggregate by strain)")
+stripchart(K020_d3_y ~K020_d3_x1,              # Data
+           method = "jitter", # Random noise
+           pch = 19,          # Pch symbols
+           col = 4,           # Color of the symbol
+           vertical = TRUE,   # Vertical mode
+           add = TRUE)   
+
+
+par(cex.axis=0.5, col.axis="black")
+boxplot(K020_d3_y ~ K020_d3_x1 + K020_d3_x2, las=2, outline=FALSE,xlab=NULL,ylab='Arcsin(yellow/green)', main="Flat K020 Pidiq results at 3 dpi (aggregate by strain - treatment)")
+stripchart(K020_d3_y ~K020_d3_x1 + K020_d3_x2,              # Data
+           method = "jitter", # Random noise
+           pch = 19,          # Pch symbols
+           col = 4,           # Color of the symbol
+           vertical = TRUE,   # Vertical mode
+           add = TRUE)   
+
+par(cex.axis=0.5, col.axis="black")
+boxplot(K020_d3_y ~ K020_d3_x1 + K020_d3_x3, las=2, outline=FALSE,xlab=NULL,ylab='Arcsin(yellow/green)', main="Flat K020 Pidiq results at 3 dpi (aggregate by strain - plant)")
+stripchart(K020_d3_y ~K020_d3_x1 + K020_d3_x3,              # Data
+           method = "jitter", # Random noise
+           pch = 19,          # Pch symbols
+           col = 4,           # Color of the symbol
+           vertical = TRUE,   # Vertical mode
+           add = TRUE) 
+
+par(cex.axis=0.5, col.axis="black")
+boxplot(K020_d3_y ~ K020_d3_x2, las=2, outline=FALSE,xlab=NULL,ylab='Arcsin(yellow/green)', main="Flat K020 Pidiq results at 3 dpi (aggregate by treatment)")
+stripchart(K020_d3_y ~K020_d3_x2,              # Data
+           method = "jitter", # Random noise
+           pch = 19,          # Pch symbols
+           col = 4,           # Color of the symbol
+           vertical = TRUE,   # Vertical mode
+           add = TRUE) 
+
+par(cex.axis=0.5, col.axis="black")
+boxplot(K020_d3_y ~ K020_d3_x2, las=2, outline=FALSE,xlab=NULL,ylab='Arcsin(yellow/green)', main="Flat K020 Pidiq results at 3 dpi (aggregate by plant)")
+stripchart(K020_d3_y ~K020_d3_x2,              # Data
+           method = "jitter", # Random noise
+           pch = 19,          # Pch symbols
+           col = 4,           # Color of the symbol
+           vertical = TRUE,   # Vertical mode
+           add = TRUE) 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
