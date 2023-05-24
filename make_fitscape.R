@@ -30,8 +30,8 @@ data_list <- data_loader(bac_in_fp="/Users/keiranmaskell/Desktop/P_syring/Data/G
             plant_in_fp="/Users/keiranmaskell/Desktop/P_syring/Data/Plant_Fitness_master.xlsx",
             bac_out_fp="/Users/keiranmaskell/Desktop/P_syring/Data/GA_master.csv",
             plant_out_fp="/Users/keiranmaskell/Desktop/P_syring/Data/Plant_fitness_master.csv")
-GA_fitness <- data.frame(data_list[[1]])
-Pidiq_fitness <- data.frame(data_list[[2]])
+#GA_fitness <- data.frame(data_list[[1]])
+#Pidiq_fitness <- data.frame(data_list[[2]])
 
 GA_fitness <- data_list[[1]]
 Pidiq_fitness <- data_list[[2]]
@@ -1029,6 +1029,7 @@ stripchart(K020_d3_y ~K020_d3_x1,              # Data
            add = TRUE)   
 
 
+quartz()
 par(cex.axis=0.5, col.axis="black")
 boxplot(K020_d3_y ~ K020_d3_x1 + K020_d3_x2, las=2, outline=FALSE,xlab=NULL,ylab='Arcsin(yellow/green)', main="Flat K020 Pidiq results at 3 dpi (aggregate by strain - treatment)")
 stripchart(K020_d3_y ~K020_d3_x1 + K020_d3_x2,              # Data
@@ -1180,11 +1181,24 @@ row.names(Fitness_indices) <- Fitness_indices[,1]
 #need Batch_infection to discriminate between groups (duplicates)
 
 #pass and fail
-Bac_result <- aggregate(log.CFU.cm2 ~ Inoculum + Flat + Batch_infection, data = GA_fitness, FUN = function(x) c(mean = mean(x), sd = sd(x)))
+#filter by strain (and flat, batch)
+#Bac_result <- aggregate(log.CFU.cm2 ~ Inoculum + Flat + Batch_infection, data = log.CFU.cm2, FUN = function(x) c(mean = mean(x), sd = sd(x)))
+#filter by column (and flat, batch)
+#Bac_result <- aggregate(log.CFU.cm2 ~ Inoculum + Flat + Batch_infection + Treatment..flatcol., data = GA_fitness, FUN = function(x) c(mean = mean(x), sd = sd(x)))
+#filter by biological replicate
+#EXCLUDE OUTLIERS BY DILUTION OR PICK BEST DILUTION
+Bac_result <- aggregate(log.CFU.cm2 ~ Inoculum + Flat + Batch_infection + Treatment..flatcol. + Plant, data = GA_fitness, FUN = function(x) c(mean = mean(x), sd = sd(x)))
 
+#filter by strain(and flat, batch)
 Plant_result <- aggregate(Pidiq_fitness$Arcsine.transformed.data ~ Inoculum + Flat + Batch_Infection, data = Pidiq_fitness, FUN = function(x) c(mean = mean(x), sd = sd(x)))
 
+#filter by biological replicate
+#TREATMENT SHOULD BE SPLIT BY COLUMN IN MASTER
+Plant_result <- aggregate(Pidiq_fitness$Arcsine.transformed.data ~ Inoculum + Flat + Batch_Infection +Treatment + Plant, data = Pidiq_fitness, FUN = function(x) c(mean = mean(x), sd = sd(x)))
+names(Pidiq_fitness)
+
 #pass only
+Bac_result <- aggregate(log.CFU.cm2 ~ Inoculum + Flat + Batch_infection, data = Bac_fitness_pass, FUN = function(x) c(mean = mean(x), sd = sd(x)))
 Bac_result <- aggregate(log.CFU.cm2 ~ Inoculum + Flat + Batch_infection, data = Bac_fitness_pass, FUN = function(x) c(mean = mean(x), sd = sd(x)))
 
 Plant_result <- aggregate(Pidiq_fitness_pass$Arcsine.transformed.data ~ Inoculum + Flat + Batch_Infection, data = Pidiq_fitness_pass, FUN = function(x) c(mean = mean(x), sd = sd(x)))
@@ -1225,13 +1239,18 @@ empty <- c()
 for(i in 1:length(non_empty_dfs)){
   #print(i)
   row.names(non_empty_dfs[[i]]) <- non_empty_dfs[[i]]$Inoculum
+  
+  #print(row.names(Fitness_indices)[[i]]))}
   matched_df <- merge(data.frame(non_empty_dfs[[i]]), Fitness_indices, by = "row.names", all = TRUE)
+  print(matched_df)
   empty <- cbind(empty,matched_df$log.CFU.cm2[,'mean'])
+  empty_alt <- cbind(empty_alt,matched_df$log.CFU.cm2)
 }
 row.names(empty) <- row.names(Fitness_indices)
 empty
 
-View(matched_df)
+View(non_empty_dfs$K018.3)
+View(empty)
 
 #merge(data.frame(non_empty_dfs2$K010.1), Fitness_indices, by = "row.names", all = TRUE)
 
@@ -1245,6 +1264,23 @@ for(i in 1:length(non_empty_dfs2)){
 }
 row.names(empty2) <- row.names(Fitness_indices)
 empty2
+
+##
+
+
+Zcordtest <- rowMeans(empty, na.rm=TRUE)
+Zcordplant <- rowMeans(Plantfitness_scaler*empty2, na.rm=TRUE)
+empty[,i]
+empty2[,i]
+
+
+
+##
+
+
+
+
+
 
 
 #pass only

@@ -57,10 +57,33 @@ prepare_GA_data <- function(GA_df){
 
 GA_df[,'Colony.count'] <- as.numeric(GA_df[,'Colony.count'])
 GA_df[,'Diln'] <- as.numeric(GA_df[,'Diln'])
+GA_df[,'core.number'] <- as.numeric(GA_df[,'Diln'])
 
-GA_fitness <- data.frame(GA_df[,1:ncol(GA_df)],'log.CFU.cm2'=log10(((GA_df[,'Colony.count']) * (1/(10^((-1)*GA_df[,'Diln']))) * (80))/1))
+library(stringr)
 
+GA_df[,'core.size'] <- as.numeric(GA_df[,'Diln'])
+
+GA_fitness_test <- GA_fitness
+GA_fitness <- GA_fitness_test
+for(i in 1:nrow(GA_fitness)){
+    GA_fitness[i,'core.size'] <- as.numeric(str_extract_all(GA_fitness[i,'core.size'], "\\d+"))
+}
+GA_fitness[,'core.size'] <- as.numeric(GA_fitness[,'core.size'])
+#GA_fitness['core.size']
+#GA_fitness[360:nrow(GA_fitness),'core.size']
+
+
+
+GA_fitness <- data.frame(GA_df[,1:ncol(GA_df)],'log.CFU.cm2'=log10(((GA_df[,'Colony.count']) * (1/(10^((-1)*GA_df[,'Diln']))) * (40))/1))
+GA_fitness <- data.frame(GA_df[,1:ncol(GA_df)],'log.CFU.cm2'=log10(((GA_df[,'Colony.count']) * (1/(10^((-1)*GA_df[,'Diln']))) * (GA_df[,'bead.beating.volume..µL.']))))
+
+
+names(GA_fitness)
+
+log10(GA_fitness[,'Colony.count']*(1/(10^((-1)*GA_fitness[,'Diln'])))*((GA_fitness[,'bead.beating.volume..µL.'])/5)/(GA_fitness[,'core.number']*2*pi*(((GA_fitness[,'core.size'])/10)/2)^2))
 #GA_fitness$log.CFU.cm2
+
+#GA_fitness <- data.frame(GA_df[,1:ncol(GA_df)],'log.CFU.cm2'=log10(((GA_df[,'Colony.count']) * (1/(10^((-1)*GA_df[,'Diln']))) * (80))/1))
 
 
 
