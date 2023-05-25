@@ -63,12 +63,12 @@ library(stringr)
 
 GA_df[,'core.size'] <- as.numeric(GA_df[,'Diln'])
 
-GA_fitness_test <- GA_fitness
-GA_fitness <- GA_fitness_test
-for(i in 1:nrow(GA_fitness)){
-    GA_fitness[i,'core.size'] <- as.numeric(str_extract_all(GA_fitness[i,'core.size'], "\\d+"))
+#GA_fitness_test <- GA_fitness
+#GA_fitness <- GA_fitness_test
+for(i in 1:nrow(GA_df)){
+    GA_df[i,'core.size'] <- as.numeric(str_extract_all(GA_df[i,'core.size'], "\\d+"))
 }
-GA_fitness[,'core.size'] <- as.numeric(GA_fitness[,'core.size'])
+GA_df[,'core.size'] <- as.numeric(GA_df[,'core.size'])
 #GA_fitness['core.size']
 #GA_fitness[360:nrow(GA_fitness),'core.size']
 
