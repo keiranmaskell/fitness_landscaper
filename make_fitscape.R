@@ -82,6 +82,10 @@ Pidiq_fitness <- prepare_Pidiq_data(Pidiq_fitness)
 Pidiq_fitness["DPI"] <- as.Date(Pidiq_fitness$Day, format="%m/%d/%Y") - as.Date(Pidiq_fitness$Day.Infected, format ="%m/%d/%Y")
 
 
+#only pass 
+Bac_fitness_pass <-GA_fitness[GA_fitness$QC=="PASS",]
+Pidiq_fitness_pass <-Pidiq_fitness[Pidiq_fitness$PASS.FAIL=="PASS",]
+
 #18
 length(GA_fitness)
 names(GA_fitness)
@@ -432,7 +436,9 @@ K017_d3_x1 <- GA_fitness$Inoculum[GA_fitness["Flat"]=="K017" & GA_fitness["Days.
 K017_d3_x2 <- GA_fitness$Plant[GA_fitness["Flat"]=="K017" & GA_fitness["Days.infected.at.time.of.harvest"]=="3"]
 K017_d3_x3 <- GA_fitness$Treatment..plate[GA_fitness["Flat"]=="K017" & GA_fitness["Days.infected.at.time.of.harvest"]=="3"]
 
-GA_fitness$log.CFU.cm2[GA_fitness["Flat"]=="K017" & GA_fitness["Days.infected.at.time.of.harvest"]=="3" & GA_fitness["Inoculum"]=="plusminus_PtoDC3000::EV_and_D36E::EV"& GA_fitness["Plant"]=="1" & GA_fitness["Treatment..plate."]=="3"]
+GA_fitness$log.CFU.cm2[GA_fitness["Flat"]=="K017" & 
+GA_fitness["Days.infected.at.time.of.harvest"]=="3" & 
+GA_fitness["Inoculum"]=="plusminus_PtoDC3000::EV_and_D36E::EV"& GA_fitness["Plant"]=="1" & GA_fitness["Treatment..plate."]=="3"]
 
 
 #K17_d3_y <- aggregate(log.CFU.cm2 ~ Inoculum + Flat + Batch_infection, data = K017_d3, FUN = function(x) c(mean = mean(x), sd = sd(x)))
@@ -1162,7 +1168,7 @@ stripchart(K020_d3_y ~K020_d3_x2,              # Data
 
 #network representation using Jaccard dissimilarity
 #this xlsx file contains the presence/absence matrix for strains in the metaclone populations (analogous to alleles in the metaclone populations)
-presabs_data <- read.xlsx('/Users/keiranmaskell/Downloads/For_Keiran/Validation_TopBottom_grid.xlsx', sheetIndex=2)
+presabs_data <- read.xlsx('/Users/keiranmaskell/Desktop/P_syring/fitness_landscaper/datasheets/jaccard_DC36E.xlsx', sheetIndex=2)
 presabs_df <- data.frame(presabs_data)
 
 View(presabs_df)
@@ -1175,7 +1181,7 @@ bac_fitness_df <- data.frame(bac_fitness_data)
 
 
 #now need an index vector, and multiple fitness vectors
-Fitness_indices <- data.frame("Metapop" = c('PtoDC3000::EV','D36E::McDC[35]','D36E::EV','245','272','286','290','154','21','6','195','255','220'))
+Fitness_indices <- data.frame("Metapop" = c('PtoDC3000::EV','D36E::McDC[35]','D36E::EV','245','272','286','290','154','21','6','195','255','220','plusminus_PtoDC3000::EV_and_D36E::EV'))
 row.names(Fitness_indices) <- Fitness_indices[,1]
 
 #need Batch_infection to discriminate between groups (duplicates)
@@ -1194,30 +1200,75 @@ Plant_result <- aggregate(Pidiq_fitness$Arcsine.transformed.data ~ Inoculum + Fl
 
 #filter by biological replicate
 #TREATMENT SHOULD BE SPLIT BY COLUMN IN MASTER
+#also handling of DPI
 Plant_result <- aggregate(Pidiq_fitness$Arcsine.transformed.data ~ Inoculum + Flat + Batch_Infection +Treatment + Plant, data = Pidiq_fitness, FUN = function(x) c(mean = mean(x), sd = sd(x)))
 names(Pidiq_fitness)
 
 #pass only
+#by strain (and flat, batch)
 Bac_result <- aggregate(log.CFU.cm2 ~ Inoculum + Flat + Batch_infection, data = Bac_fitness_pass, FUN = function(x) c(mean = mean(x), sd = sd(x)))
-Bac_result <- aggregate(log.CFU.cm2 ~ Inoculum + Flat + Batch_infection, data = Bac_fitness_pass, FUN = function(x) c(mean = mean(x), sd = sd(x)))
+#by biological replicate
+Bac_result <- aggregate(log.CFU.cm2 ~ Inoculum + Flat + Batch_infection + Treatment..flatcol. +Plant, data = Bac_fitness_pass, FUN = function(x) c(mean = mean(x), sd = sd(x)))
 
+#by strain (and flat, batch)
 Plant_result <- aggregate(Pidiq_fitness_pass$Arcsine.transformed.data ~ Inoculum + Flat + Batch_Infection, data = Pidiq_fitness_pass, FUN = function(x) c(mean = mean(x), sd = sd(x)))
+#by biological replicate
+Plant_result <- aggregate(Pidiq_fitness_pass$Arcsine.transformed.data ~ Inoculum + Flat + Batch_Infection +Treatment + Plant + Day, data = Pidiq_fitness_pass, FUN = function(x) c(mean = mean(x), sd = sd(x)))
+
+#filter out NAs and day zero photos
+Pidiq_fitness_pass <- Pidiq_fitness_pass[!(is.na(Pidiq_fitness_pass$DPI)), ]
+Pidiq_fitness_pass <- Pidiq_fitness_pass[!(Pidiq_fitness_pass$DPI==0), ]
+
+#filter out NAs
+Bac_fitness_pass <- Bac_fitness_pass[!(is.na(Bac_fitness_pass$Days.infected.at.time.of.harvest)), ]
+
+Bac_result <- aggregate(log.CFU.cm2 ~ Inoculum + Flat + Batch_infection + Treatment..flatcol. +Plant, data = Bac_fitness_pass, FUN = function(x) c(mean = mean(x), sd = sd(x)))
+
+Plant_result <- aggregate(Pidiq_fitness_pass$Arcsine.transformed.data ~ Inoculum + Flat + Batch_Infection +Treatment + Plant + Age, data = Pidiq_fitness_pass, FUN = function(x) c(mean = mean(x), sd = sd(x)))
 
 
 
+
+# Bac_result$Category <- as.factor(c(Bac_result$Inoculum,Bac_result$Flat,Bac_result$Batch_infection,Bac_result$Treatment..flatcol.,Bac_result$Plant))
+# Plant_result$Category <- as.factor(c(Plant_result$Inoculum,Plant_result$Flat,Plant_result$Batch_Infection,Plant_result$Treatment,Plant_result$Plant,Plant_result$Day))
+
+# #pass only and without aggregation by mean
+# unique(c(Bac_fitness_pass$Inoculum,Bac_fitness_pass$Flat,Bac_fitness_pass$Batch_infection,Bac_fitness_pass$Treatment..flatcol.,Bac_fitness_pass$Plant))
+# unique(c(Pidiq_fitness_pass$Inoculum,Pidiq_fitness_pass$Flat,Pidiq_fitness_pass$Batch_Infection,Pidiq_fitness_pass$Treatment,Pidiq_fitness_pass$Plant,Pidiq_fitness_pass$Day))
+
+# l1 <- levels(Bac_result)
+# l2 <- levels(Plant_result)
+
+# l2[!(l2 %in% l1)]
+
+# common_levels <- intersect(levels(Bac_result), levels(df2$Category))
+
+
+# levels(Plant_result) <- levels(Plant_result)[levels(Plant_result) %in% levels(Bac_result)]
+
+# names(Bac_result)
+# Bac_result$log.CFU.cm2[,'mean']
 #
 #bec <- c(unique(Bac_result$Inoculum))
 #bac_fitness_df[,1][bac_fitness_df[,1] %in% bec]
 #
 
+#old
+#bac_group <- interaction(Bac_result$Flat, Bac_result$Batch_infection)
 
-bac_group <- interaction(Bac_result$Flat, Bac_result$Batch_infection)
+#biological replicates
+bac_group <- interaction(Bac_result$Flat, Bac_result$Batch_infection, Bac_result$Treatment..flatcol., Bac_result$Plant)
 grouped_vals <- split(Bac_result, bac_group)
 #remove empty groups
 df_rows <- sapply(grouped_vals, nrow)
 non_empty_dfs <- grouped_vals[df_rows >0]
 
-plant_group <- interaction(Plant_result$Flat, Plant_result$Batch_Infection)
+#old
+#plant_group <- interaction(Plant_result$Flat, Plant_result$Batch_Infection)
+
+#biological replicates
+plant_group <- interaction(Plant_result$Flat, Plant_result$Batch_Infection, Plant_result$Treatment, Plant_result$Plant)
+
 grouped_vals2 <- split(Plant_result, plant_group)
 #remove empty groups
 df_rows2 <- sapply(grouped_vals2, nrow)
@@ -1235,22 +1286,28 @@ non_empty_dfs2 <- grouped_vals2[df_rows2 >0]
 
 #merge(data.frame(non_empty_dfs$K010.1), Fitness_indices, by = "row.names", all = TRUE)
 
+
+
+
+non_empty_dfs[[15]]
+
 empty <- c()
+#empty_alt <- c()
 for(i in 1:length(non_empty_dfs)){
   #print(i)
   row.names(non_empty_dfs[[i]]) <- non_empty_dfs[[i]]$Inoculum
-  
+  #print(row.names(non_empty_dfs[[i]]))}
   #print(row.names(Fitness_indices)[[i]]))}
   matched_df <- merge(data.frame(non_empty_dfs[[i]]), Fitness_indices, by = "row.names", all = TRUE)
-  print(matched_df)
+  #print(matched_df)  
   empty <- cbind(empty,matched_df$log.CFU.cm2[,'mean'])
-  empty_alt <- cbind(empty_alt,matched_df$log.CFU.cm2)
+  #empty_alt <- cbind(empty_alt,matched_df$log.CFU.cm2)
 }
-row.names(empty) <- row.names(Fitness_indices)
+row.names(empty) <- sort(row.names(Fitness_indices))
 empty
 
-View(non_empty_dfs$K018.3)
 View(empty)
+
 
 #merge(data.frame(non_empty_dfs2$K010.1), Fitness_indices, by = "row.names", all = TRUE)
 
@@ -1262,20 +1319,9 @@ for(i in 1:length(non_empty_dfs2)){
   matched_df2 <- merge(data.frame(non_empty_dfs2[[i]]), Fitness_indices, by = "row.names", all = TRUE)
   empty2 <- cbind(empty2,matched_df2$Pidiq_fitness.Arcsine.transformed.data[,'mean'])
 }
-row.names(empty2) <- row.names(Fitness_indices)
+row.names(empty2) <- sort(row.names(Fitness_indices))
 empty2
 
-##
-
-
-Zcordtest <- rowMeans(empty, na.rm=TRUE)
-Zcordplant <- rowMeans(Plantfitness_scaler*empty2, na.rm=TRUE)
-empty[,i]
-empty2[,i]
-
-
-
-##
 
 
 
@@ -1291,9 +1337,68 @@ for(i in 1:length(non_empty_dfs2)){
   matched_df2 <- merge(data.frame(non_empty_dfs2[[i]]), Fitness_indices, by = "row.names", all = TRUE)
   empty2 <- cbind(empty2,matched_df2$Pidiq_fitness_pass.Arcsine.transformed.data[,'mean'])
 }
-row.names(empty2) <- row.names(Fitness_indices)
+row.names(empty2) <- sort(row.names(Fitness_indices))
 empty2
 
+
+
+
+
+##
+
+
+
+# conditions <- expand.grid(
+#     #CFU = c(unique(GA_fitness$log.CFU.cm.2)),
+#     Inoculum = c(unique(GA_fitness$Inoculum)),
+#     Batch = c(unique(GA_fitness$Batch_infection)),
+#     Flat = c(unique(GA_fitness$Flat)),
+#     Col = c(unique(GA_fitness$Treatment..flatcol.)),
+#     Rep = c(unique(GA_fitness$Plant))
+# )
+
+# #last_five <- substr(Mock_GA$Media, start = nchar(Mock_GA$Media) - 4, stop = nchar(Mock_GA$Media))
+
+# subsets <- lapply(1:nrow(conditions), function(i) {
+#   subset <- GA_fitness$log.CFU.cm.2[
+#     unique(GA_fitness$Inoculum) & 
+#     unique(GA_fitness$Batch_infection) & 
+#     unique(GA_fitness$Flat) & 
+#     unique(GA_fitness$Treatment..flatcol.) & 
+#     unique(GA_fitness$Plant)
+
+#   ]
+
+
+#   #conditions$Date <- substr(as.character(as.Date(conditions$Date)), start = nchar(as.character(as.Date(conditions$Date))) - 4, stop = nchar(as.character(as.Date(conditions$Date))))
+#   #conditions$Media <- ifelse(grepl("Strep", conditions$Media), "+Strep", "-Strep")
+#   #conditions$Sample <- ifelse(grepl("DC36E", conditions$Sample), "DC36E", "DC3000")
+
+#   Inoculum <- conditions$Inoculum[i]
+#   Batch <- conditions$Batch[i]
+#   Flat <- conditions$Flat[i]
+#   Col <- conditions$Col[i]
+#   Rep <- conditions$Rep[i]
+  
+
+  
+#   #return(list(Combination = paste("Sample =", sample_name, "Media =", media_name, "Date =", conditions$Date[i], collapse = ", "),Subset = subset))
+#   return(list(paste(Inoculum, media_name,Batch, Flat,Col,Rep, collapse = ", "),Subset = subset))
+
+
+# })
+
+# # Combine subsets using cbind()
+# combined_data <- do.call(cbind, subsets)
+# combined_data[2][[1]]
+# combined_data[1][[1]]
+
+
+
+
+
+
+##
 
 
 
@@ -1363,12 +1468,17 @@ for (z in list(z1, z2, z3)) {
 ##
 
 
+
+
 #get zeros for empty cells
 presabs_df[is.na(presabs_df)] <- 0
 #subset to trim off empty groups
-presabs_df <- subset(presabs_df[1:13,])
+
+#fix later
+presabs_df <- subset(presabs_df[1:14,])
+
 #make 
-rownames(presabs_df) <- presabs_df[,1]
+row.names(presabs_df) <- presabs_df[,1]
 #trim off the first column, containing only the group names
 presabs_df <- subset(presabs_df[,2:length(presabs_df)])
 
@@ -1377,6 +1487,7 @@ presabs_df <- subset(presabs_df[,2:length(presabs_df)])
 
 library(vegan)
 jac_dis <- vegdist(presabs_df, method='jaccard')
+
 
 View(as.matrix(jac_dis))
 #jaccard_dissimilarity <- as.dist(matrix(c(0, 0.2, 0.6, 0.8, 0.3, 0.1, 0.7, 0.9, 0.5, 0.4, 0.2, 0, 0.6, 0.8, 0.4, 0.3, 0.7, 0.9, 0.6, 0.4, 0.6, 0.8, 0.5, 0.6, 0), nrow = 5))
@@ -1395,6 +1506,7 @@ short_labels <- substr(V(jaccard_graph)$name, 1, 5)
 V(jaccard_graph)$label <- short_labels
 V(jaccard_graph)$label[2] <- "[35]"
 V(jaccard_graph)$label[3] <- "36EV"
+V(jaccard_graph)$label[14] <- "+/-"
 
 jav_dis_inverse <- ((1/jac_dis)/36)
 
@@ -1404,12 +1516,14 @@ short_labels <- substr(V(jaccard_graph_inverse)$name, 1, 5)
 V(jaccard_graph_inverse)$label <- short_labels
 V(jaccard_graph_inverse)$label[2] <- "[35]"
 V(jaccard_graph_inverse)$label[3] <- "36EV"
+V(jaccard_graph)$label[14] <- "+/-"
+
 
 # Customize the graph layout
 layout <- layout_with_fr(jaccard_graph)
 layout <- layout_with_fr(jaccard_graph, weights = E(jaccard_graph)$weight, maxiter =1000)
 layout2 <- layout_with_fr(jaccard_graph_inverse)
-layout2 <- layout_with_fr(jaccard_graph_inverse, weights = E(jaccard_graph_inverse)$weight, maxiter =10000)
+layout2 <- layout_with_fr(jaccard_graph_inverse,area=1000, weights = E(jaccard_graph_inverse)$weight, maxiter =10000)
 
 
 # Plot the graph
@@ -1520,10 +1634,13 @@ Plantfitness_scaler <- 10
 Zcordtest <- rowMeans(empty, na.rm=TRUE)
 Zcordplant <- rowMeans(Plantfitness_scaler*empty2, na.rm=TRUE)
 
-Zcordtest[is.nan(Zcordtest)]
+#needs better fix, like removing them from the jaccard matrix
+Zcordtest[is.nan(Zcordtest)] <- 0
+Zcordplant[is.nan(Zcordplant)] <- 0
 
 
-flat_colours <- c("magenta", "blue", "green", "purple", "gold","dodgerblue","darkred")
+
+flat_colours <- c("magenta", "blue", "green", "purple", "gold","dodgerblue","darkred","salmon")
 
 library(rgl)
 rgl.init()
@@ -1674,7 +1791,7 @@ rglwidget(scene1)
 library(htmlwidgets)
 
 widget <- rglwidget()
-saveWidget(widget, '0505_coupledfitness_DC36E_top8_bottom8_fitLS.html')
+saveWidget(widget, '0523_coupledfitness_DC36E_total.html',selfcontained=FALSE)
 
 
 
@@ -1783,7 +1900,7 @@ filled.contour(zmat2, color.palette = my_palette, key.title="Relative Fitness", 
   text(x_norm, y_norm, labels=node_df$ID,col='black',font=2,cex=1.0)
 }
 )
-quartz.save("Plant_fitness_contour_0505.jpg", type = "jpg")
+quartz.save("Plant_fitness_contour_0523_total.jpg", type = "jpg")
 dev.off()
 
 quartz()
@@ -1799,5 +1916,5 @@ filled.contour(zmat, color.palette = my_palette, key.title="Relative Fitness", m
   text(x_norm, y_norm, labels=node_df$ID,col='black',font=2,cex=1.0)
 }
 )
-quartz.save("Bac_fitness_contour0505.jpg", type = "jpg")
+quartz.save("Bac_fitness_contour0523.jpg", type = "jpg")
 dev.off()
