@@ -1,20 +1,42 @@
 #function_repo
 
-data_loader <- function(bac_in_fp, plant_in_fp, bac_out_fp, plant_out_fp){
+# data_loader <- function(bac_in_fp, plant_in_fp, bac_out_fp, plant_out_fp){
 
-    GA_master <- read.xlsx(bac_in_fp,sheetIndex = 1)
-    plant_fitness_master <- read.xlsx(plant_in_fp,sheetIndex = 1)
+#     GA_master <- read.xlsx(bac_in_fp,sheetIndex = 1)
+#     plant_fitness_master <- read.xlsx(plant_in_fp,sheetIndex = 1)
 
-    write.csv(GA_master, bac_out_fp, row.names=FALSE)
-    write.csv(plant_fitness_master, plant_out_fp, row.names=FALSE)
+#     write.csv(GA_master, bac_out_fp, row.names=FALSE)
+#     write.csv(plant_fitness_master, plant_out_fp, row.names=FALSE)
 
-    GA_master <- read.csv(bac_out_fp)
-    plant_fitness_master <- read.csv(plant_out_fp)
+#     GA_master <- read.csv(bac_out_fp)
+#     plant_fitness_master <- read.csv(plant_out_fp)
 
-    GA_fitness <- data.frame(GA_master)
-    Pidiq_fitness <- data.frame(plant_fitness_master)
+#     GA_fitness <- data.frame(GA_master)
+#     Pidiq_fitness <- data.frame(plant_fitness_master)
 
-    return(list(GA_fitness, Pidiq_fitness))
+#     return(list(GA_fitness, Pidiq_fitness))
+
+
+# }
+
+
+data_loader <- function(in_fp, out_fp, sheetnum){
+
+    master <- read.xlsx(in_fp,sheetIndex = sheetnum)
+    #plant_fitness_master <- read.xlsx(plant_in_fp,sheetIndex = 1)
+
+    write.csv(master, out_fp, row.names=FALSE)
+    #write.csv(plant_fitness_master, plant_out_fp, row.names=FALSE)
+
+    master <- read.csv(out_fp)
+    #plant_fitness_master <- read.csv(plant_out_fp)
+
+    master <- data.frame(master)
+    #Pidiq_fitness <- data.frame(plant_fitness_master)
+
+    return(master)
+
+
 }
 
 

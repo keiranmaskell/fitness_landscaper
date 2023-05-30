@@ -3,38 +3,14 @@ setwd('/Users/keiranmaskell/Desktop/P_syring/fitness_landscaper')
 rm(list=ls())
 
 source('init.R')
-#library(xlsx)
-#bac_fit_data <- read.xlsx("/Users/keiranmaskell/Downloads/For_Keiran/GA_MinScreen4_B3i1_2023-02-24 copy.xlsx", sheetIndex = 1)
-# fake_data <- read.xlsx("/Users/keiranmaskell/Desktop/P_syring/fitness_landscaper/fake_data.xlsx", sheetIndex = 1)
-
-# GA_master <- read.xlsx("/Users/keiranmaskell/Desktop/P_syring/Data/GA_master.xlsx", sheetIndex = 1)
-
-# plant_fit_data <- read.xlsx("/Users/keiranmaskell/Desktop/P_syring/fitness_landscaper/fake_pidiq_data.xlsx",sheetIndex = 1)
-
-# plant_fitness_master <- read.xlsx("/Users/keiranmaskell/Desktop/P_syring/Data/Plant_Fitness_master.xlsx",sheetIndex = 1)
-
-# write.csv(GA_master, "/Users/keiranmaskell/Desktop/P_syring/Data/GA_master.csv", row.names=FALSE)
-# write.csv(plant_fitness_master, "/Users/keiranmaskell/Desktop/P_syring/Data/Plant_fitness_master.csv", row.names=FALSE)
-
-# GA_master <- read.csv("/Users/keiranmaskell/Desktop/P_syring/Data/GA_master.csv")
-# plant_fitness_master <- read.csv("/Users/keiranmaskell/Desktop/P_syring/Data/Plant_fitness_master.csv")
-
-# #GA_fitness <- data.frame(fake_data)
-# #GA_fitness <- GA_fitness[1:64,]
-
-# GA_fitness <- data.frame(GA_master)
-
 source('fxn_repo.R')
 
-data_list <- data_loader(bac_in_fp="/Users/keiranmaskell/Desktop/P_syring/Data/GA_master.xlsx",
-            plant_in_fp="/Users/keiranmaskell/Desktop/P_syring/Data/Plant_Fitness_master.xlsx",
-            bac_out_fp="/Users/keiranmaskell/Desktop/P_syring/Data/GA_master.csv",
-            plant_out_fp="/Users/keiranmaskell/Desktop/P_syring/Data/Plant_fitness_master.csv")
-#GA_fitness <- data.frame(data_list[[1]])
-#Pidiq_fitness <- data.frame(data_list[[2]])
+GA_fitness <- data_loader(in_fp="/Users/keiranmaskell/Desktop/P_syring/Data/GA_master.xlsx",
+            out_fp="/Users/keiranmaskell/Desktop/P_syring/Data/GA_master.csv", 1)
 
-GA_fitness <- data_list[[1]]
-Pidiq_fitness <- data_list[[2]]
+Pidiq_fitness <- data_loader(in_fp="/Users/keiranmaskell/Desktop/P_syring/Data/Plant_Fitness_master.xlsx",
+            out_fp="/Users/keiranmaskell/Desktop/P_syring/Data/Plant_fitness_master.csv", 1)
+
 
 #View(GA_fitness)
 
@@ -1193,16 +1169,29 @@ row.names(Fitness_indices) <- Fitness_indices[,1]
 #Bac_result <- aggregate(log.CFU.cm2 ~ Inoculum + Flat + Batch_infection + Treatment..flatcol., data = GA_fitness, FUN = function(x) c(mean = mean(x), sd = sd(x)))
 #filter by biological replicate
 #EXCLUDE OUTLIERS BY DILUTION OR PICK BEST DILUTION
-Bac_result <- aggregate(log.CFU.cm2 ~ Inoculum + Flat + Batch_infection + Treatment..flatcol. + Plant, data = GA_fitness, FUN = function(x) c(mean = mean(x), sd = sd(x)))
+
+#filter nas
+Pidiq_fitness_all <- Pidiq_fitness[!(is.na(Pidiq_fitness$DPI)), ]
+Pidiq_fitness_all <- Pidiq_fitness[!(Pidiq_fitness$DPI==0), ]
+
+#filter out NAs
+Bac_fitness_all <- GA_fitness[!(is.na(GA_fitness$Days.infected.at.time.of.harvest)), ]
+
+
+
+Bac_result <- aggregate(log.CFU.cm2 ~ Inoculum + Flat + Batch_infection + Treatment..flatcol. + Plant, data = Bac_fitness_all, FUN = function(x) c(mean = mean(x), sd = sd(x)))
 
 #filter by strain(and flat, batch)
-Plant_result <- aggregate(Pidiq_fitness$Arcsine.transformed.data ~ Inoculum + Flat + Batch_Infection, data = Pidiq_fitness, FUN = function(x) c(mean = mean(x), sd = sd(x)))
+Plant_result <- aggregate(Pidiq_fitness_all$Arcsine.transformed.data ~ Inoculum + Flat + Batch_Infection, data = Pidiq_fitness_all, FUN = function(x) c(mean = mean(x), sd = sd(x)))
 
 #filter by biological replicate
 #TREATMENT SHOULD BE SPLIT BY COLUMN IN MASTER
 #also handling of DPI
-Plant_result <- aggregate(Pidiq_fitness$Arcsine.transformed.data ~ Inoculum + Flat + Batch_Infection +Treatment + Plant, data = Pidiq_fitness, FUN = function(x) c(mean = mean(x), sd = sd(x)))
+Plant_result <- aggregate(Pidiq_fitness_all$Arcsine.transformed.data ~ Inoculum + Flat + Batch_Infection +Treatment + Plant, data = Pidiq_fitness_all, FUN = function(x) c(mean = mean(x), sd = sd(x)))
 names(Pidiq_fitness)
+
+
+###
 
 #pass only
 #by strain (and flat, batch)
@@ -1317,7 +1306,7 @@ for(i in 1:length(non_empty_dfs2)){
   #print(i)
   row.names(non_empty_dfs2[[i]]) <- non_empty_dfs2[[i]]$Inoculum
   matched_df2 <- merge(data.frame(non_empty_dfs2[[i]]), Fitness_indices, by = "row.names", all = TRUE)
-  empty2 <- cbind(empty2,matched_df2$Pidiq_fitness.Arcsine.transformed.data[,'mean'])
+  empty2 <- cbind(empty2,matched_df2$Pidiq_fitness_all.Arcsine.transformed.data[,'mean'])
 }
 row.names(empty2) <- sort(row.names(Fitness_indices))
 empty2
@@ -1593,43 +1582,43 @@ max_dist <- max(dist_mat)
 
 
 
-rgl.init()
-open3d(windowRect=c(50,50,800,800))
-# Create a 3D scatter plot of the network
-plot3d(node_df$X_cord, node_df$Y_cord, node_df$Z_cord, rep(0, nrow(node_df)), type = "n")
-#points3d(node_df$X_cord, node_df$Y_cord, node_df$Z_cord, col = "blue", size = 5)
-for(i in 1:ncol(empty)){
-  #print(i)
-  #print(empty[,i])
-  points3d(node_df$X_cord, node_df$Y_cord, empty[,i], col = "blue", size = 5)
-}
-#points3d(node_df$X_cord, node_df$Y_cord, rep(0, nrow(node_df)), col = "red", size = 5)
-for(i in 1:ncol(empty2)){
-  points3d(node_df$X_cord, node_df$Y_cord, 30*empty2[,i], col = "red", size = 5)
-}
+# rgl.init()
+# open3d(windowRect=c(50,50,800,800))
+# # Create a 3D scatter plot of the network
+# plot3d(node_df$X_cord, node_df$Y_cord, node_df$Z_cord, rep(0, nrow(node_df)), type = "n")
+# #points3d(node_df$X_cord, node_df$Y_cord, node_df$Z_cord, col = "blue", size = 5)
+# for(i in 1:ncol(empty)){
+#   #print(i)
+#   #print(empty[,i])
+#   points3d(node_df$X_cord, node_df$Y_cord, empty[,i], col = "blue", size = 5)
+# }
+# #points3d(node_df$X_cord, node_df$Y_cord, rep(0, nrow(node_df)), col = "red", size = 5)
+# for(i in 1:ncol(empty2)){
+#   points3d(node_df$X_cord, node_df$Y_cord, 30*empty2[,i], col = "red", size = 5)
+# }
 
-# Loop over each pair of points and draw a line with width proportional to distance
-for(i in 1:(nrow(node_df)-1)){
-  for(j in (i+1):nrow(node_df)){
-    dist_ij <- dist_mat[i,j]
-    norm_dist_ij <- dist_ij/max_dist # Normalize distance
-    line_width <- 1 + 4*norm_dist_ij # Scale the line width from 1 to 10 based on normalized distance
-    segments3d(c(node_df$X_cord[i],node_df$X_cord[j]), c(node_df$Y_cord[i],node_df$Y_cord[j]), c(0,0),
-               col = "lightblue", lwd = line_width)
-  }
-}
+# # Loop over each pair of points and draw a line with width proportional to distance
+# for(i in 1:(nrow(node_df)-1)){
+#   for(j in (i+1):nrow(node_df)){
+#     dist_ij <- dist_mat[i,j]
+#     norm_dist_ij <- dist_ij/max_dist # Normalize distance
+#     line_width <- 1 + 4*norm_dist_ij # Scale the line width from 1 to 10 based on normalized distance
+#     segments3d(c(node_df$X_cord[i],node_df$X_cord[j]), c(node_df$Y_cord[i],node_df$Y_cord[j]), c(0,0),
+#                col = "lightblue", lwd = line_width)
+#   }
+# }
 
-points3d(node_df$X_cord, node_df$Y_cord,
-         rep(0, nrow(node_df)),
-         col = "red", size = 10)
+# points3d(node_df$X_cord, node_df$Y_cord,
+#          rep(0, nrow(node_df)),
+#          col = "red", size = 10)
 
-text3d(node_df$X_cord, node_df$Y_cord, rep(0, nrow(node_df)),
-       texts = node_df$ID, cex = 1.2, adj = c(1, 1), bg= "transparent")
-
-
+# text3d(node_df$X_cord, node_df$Y_cord, rep(0, nrow(node_df)),
+#        texts = node_df$ID, cex = 1.2, adj = c(1, 1), bg= "transparent")
 
 
-Plantfitness_scaler <- 10
+
+
+Plantfitness_scaler <- 40
 
 Zcordtest <- rowMeans(empty, na.rm=TRUE)
 Zcordplant <- rowMeans(Plantfitness_scaler*empty2, na.rm=TRUE)
@@ -1650,7 +1639,7 @@ open3d(windowRect=c(50,50,1000,1000))
 plot1 <- plot3d(node_df$X_cord, node_df$Y_cord, Zcordplant, rep(0, nrow(node_df)),
        xlab = "nodespace x", ylab='nodespace y', zlab='relative fitness (GA or Pidiq)', type = "n")
 #points3d(node_df$X_cord, node_df$Y_cord, node_df$Z_cord, col = "blue", size = 8)
-points3d(node_df$X_cord, node_df$Y_cord, rep(0.0, nrow(node_df)), col = "red", size = 10)
+points3d(node_df$X_cord, node_df$Y_cord, rep(-5.0, nrow(node_df)), col = "red", size = 10)
 
 #GA points
 for(i in 1:ncol(empty)){
@@ -1745,7 +1734,7 @@ zmat <- matrix(zint, ncol = length(xseq), byrow = TRUE)
 #surface3d(x =xseq, y=yseq, z=akimat, col='green', alpha = 0.3)
 
 #interpolate a plant fitness surface
-zint2 <- interp(x = node_df$X_cord, y = node_df$Y_cord, z = Zcordplant, 
+zint2 <- interp(x = node_df$X_cord, y = node_df$Y_cord, z = Plantfitness_scaler*Zcordplant, 
                xo = xseq, yo = yseq, linear = FALSE, extrap=TRUE,
                jitter = FALSE, jitter.iter=6, jitter.random =TRUE)$z
 zmat2 <- matrix(zint2, ncol = length(xseq), byrow = TRUE)
