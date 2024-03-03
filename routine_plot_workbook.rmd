@@ -1,0 +1,573 @@
+---
+title: "File for plotting GA and Pidiq results"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+#Step 1: make sure all the scripts are in the same directory - setwd to this directory
+```{r}
+rm(list=ls())
+
+
+your_directory_here <- "/Users/keiranmaskell/Desktop/scripts_nightmare/1205/src"
+
+setwd("src")
+
+sprintf("current working directory: %s", getwd())
+
+```
+
+
+#Init script will load packages, and the fxn_repo script will load all the other functions needed
+```{r}
+source("init_1205.R")
+source("fxn_repo 2 12_05.R")
+```
+
+#Step 2: set the parameters for the data you want to load in
+#The most important parameters here are filepaths to the GA and Pidiq xlsx filepaths
+#explanation of the rest of the parameters
+```{r}
+#paste filepath of master data file(s) WITHOUT the file extension
+prms <- make.prms(flat_id = "K0074",
+                        type= "single_flat",
+                        GA = TRUE,
+                        Pidiq = FALSE,
+                        GA_master_fp = "/Users/keiranmaskell/Desktop/scripts_nightmare/1205/data/Infection_results_master",
+                        GA_sheet = 1,
+                        Pidiq_master_fp = "/Users/keiranmaskell/Desktop/scripts_nightmare/1205/data/Infection_results_master",
+                        Pidiq_sheet = 2
+                      )
+
+```
+
+
+#load in the data and calculate logcfu/cm^2 and/or PIDIQ scores
+```{r}
+GA_fitness <- prepare_GA_data(use_coresize_approximation = "N")
+Pidiq_fitness <- prepare_Pidiq_data()
+
+head(GA_fitness)
+head(Pidiq_fitness)
+
+```
+
+
+# ```{r}
+
+# # datalist <- get_data(prms$GA_master_fp, prms$GA_sheet, prms$Pidiq_master_fp, prms$Pidiq_sheet, GA_yn=TRUE, Pidiq_yn=TRUE)
+
+# # datalist
+
+# ```
+
+
+#plot data from specific flats
+```{r}
+
+names(GA_fitness)
+
+#add any treatments other than inoculum to include as variables
+#extra_treatment_groups <- c("OD","Treatment..flatcol.")
+extra_treatment_groups <- c("OD")
+
+#which flats
+flat_id <- c("K0074","K0075")
+flat_id <- c("K0070","K0069")
+
+#use pidiq data or not
+use_pidiq <- "Y"
+use_GA <- "Y"
+
+
+# split_by_flatcol_yn <- "Y"
+# x4_factor <- "Y"
+
+
+```
+
+
+#exclude certain treatments or outcomes from the data
+```{r}
+
+#treatments_to_exclude <- list(Inoculum="plusminus_PtoDC3000::EV_and_D36E::EV",insufficient_material="Y")
+treatments_to_exclude <- list(Inoculum="plusminus_PtoDC3000::EV_and_D36E::EV")
+
+
+if(use_GA=="Y"){
+data_subset <- GA_fitness
+for(i in 1:length(treatments_to_exclude)){
+  data_subset <- data_subset[data_subset[,names(treatments_to_exclude[i])]!=treatments_to_exclude[[i]],]
+  
+  }
+}
+
+if(use_pidiq=="Y"){
+pidiq_subset <- Pidiq_fitness
+for(i in 1:length(treatments_to_exclude)){
+  pidiq_subset <- pidiq_subset[pidiq_subset[,names(treatments_to_exclude[i])]!=treatments_to_exclude[[i]],]
+  
+  }
+}
+
+
+``` 
+
+
+#filter the data by the chosen flats, and split into data with 4 cores and data without 4 cores, as pooling cores can affect the overall outcome
+#aggregate the technical reps to get average for each biological replicate
+#merge pidiq and GA data if both are being used, and remove data with empties for either pidiq or GA
+#If plotting GA only or Pidiq only, you can keep the data with empties for the other
+```{r}
+
+# #check for duplicates 
+# duplicates <- pidiq_subset[duplicated(pidiq_subset[, c("Flat","Inoculum", "Plant")]),]
+# print(duplicates)
+
+
+if(nrow(data_subset[data_subset$Flat %in% flat_id,])==0){
+  use_GA <- "N"
+}
+
+if(nrow(pidiq_subset[pidiq_subset$Flat %in% flat_id,])==0){
+  use_pidiq <- "N"
+}
+
+
+if(use_GA=="Y"){
+
+  #only the targeted flats
+  data_subset <- data_subset[data_subset$Flat %in% flat_id,]
+
+  #split into full sample and suspects (less than 4 cores or insufficient material to get proper cores) 
+  #-> the latter group will be excluded from statistical analysis
+  data_subset_fullsample <- data_subset[data_subset$insufficient_material=="N"|as.numeric(data_subset$core.number)==4,][order(data_subset$Inoculum[data_subset$insufficient_material=="N"|as.numeric(data_subset$core.number)==4]),]
+  data_subset_suspects <- data_subset[data_subset$insufficient_material=="Y"|as.numeric(data_subset$core.number)!=4,][order(data_subset$Inoculum[data_subset$insufficient_material=="Y"|as.numeric(data_subset$core.number)!=4]),]
+
+  #aggregate the technical reps to get average for each biological replicate
+  data_subset_fullsample_agg <- aggregate(data_subset_fullsample[,"log.CFU.cm2"], by = data_subset_fullsample[,c("Flat","Inoculum","Plant",extra_treatment_groups)], FUN = mean)
+  data_subset_suspects_agg <- aggregate(data_subset_suspects[,"log.CFU.cm2"], by = data_subset_suspects[,c("Flat","Inoculum","Plant",extra_treatment_groups)], FUN = mean)
+  
+  #both GA and Pidiq
+  if(use_pidiq=="Y"){
+    pidiq_subset <- pidiq_subset[pidiq_subset$Flat %in% flat_id,]
+
+    merged_data_fullsample <- merge(data_subset_fullsample_agg, pidiq_subset[, c("Flat","Inoculum", "Plant", "Arcsine.transformed.data")], 
+                     by = c("Flat","Inoculum", "Plant"), all.x = TRUE)
+
+    merged_data_suspects <- merge(data_subset_suspects_agg, pidiq_subset[, c("Flat","Inoculum", "Plant", "Arcsine.transformed.data")],
+                      by = c("Flat","Inoculum", "Plant"), all.x = TRUE)
+
+  #only GA
+  }else{
+    merged_data_fullsample <- data_subset_fullsample_agg
+    merged_data_suspects <- data_subset_suspects_agg
+  
+  }
+}else{
+  #only Pidiq
+  if(use_pidiq=="Y"){
+    pidiq_subset <- pidiq_subset[pidiq_subset$Flat %in% flat_id,]
+    merged_data_fullsample <- pidiq_subset
+    merged_data_suspects <- pidiq_subset
+  }else{
+    stop("No data to plot")
+  
+  }
+}
+
+#remove data with empties for either pidiq or GA - if you want to keep them plot GA only or Pidiq only
+# Find rows in pidiq_subset that don't have a match in data_subset - these are the biological replicates 
+no_match <- merged_data_fullsample[is.na(merged_data_fullsample$Arcsine.transformed.data)|is.na(merged_data_fullsample$x),]
+print(no_match)
+if(nrow(no_match)>0){
+  filtered_df_fullsample <- merged_data_fullsample[!is.na(merged_data_fullsample$Arcsine.transformed.data) & !is.na(merged_data_fullsample$x), ]
+}else{
+  filtered_df_fullsample <- merged_data_fullsample
+}
+
+no_match <- merged_data_suspects[is.na(merged_data_suspects$Arcsine.transformed.data)|is.na(merged_data_suspects$x),]
+print(no_match)
+if(nrow(no_match)>0){
+  filered_df_suspects <- merged_data_suspects[!is.na(merged_data_suspects$Arcsine.transformed.data) & !is.na(merged_data_suspects$x), ]
+}else{
+  filtered_df_suspects <- merged_data_suspects
+}
+
+
+```
+
+
+# the_dpi <- "4"
+
+# print("date infected")
+# print(unique(as.Date(data_subset$Date.infected[data_subset$Flat==flat_id])))
+
+# print("date harvested")
+# harvest_date <- unique(paste0(
+#    substring(unique(as.Date(data_subset$Date.infected[data_subset$Flat==flat_id])),0,8),
+#    as.character(as.numeric(data_subset$Days.infected.at.time.of.harvest) + as.numeric(substring(unique(as.Date(data_subset$Date.infected[data_subset$Flat==flat_id])),9,nchar(as.character((unique(as.Date(data_subset$Date.infected[data_subset$Flat==flat_id]))))))))
+# ))
+# print(harvest_date)
+
+#remove the extra columns from the df
+```{r}
+
+if(use_GA=="Y"){
+  if(use_pidiq=="Y"){
+
+    filtered_df_fullsample <- filtered_df_fullsample %>%
+    dplyr::select(Inoculum,extra_treatment_groups,x,Arcsine.transformed.data)
+
+    filtered_df_suspects <- filtered_df_suspects %>%
+    dplyr::select(Inoculum,extra_treatment_groups,x,Arcsine.transformed.data)
+
+  }else{
+
+    filtered_df_fullsample <- filtered_df_fullsample %>%
+    dplyr::select(Inoculum,extra_treatment_groups,x)
+
+    filtered_df_suspects <- filtered_df_suspects %>%
+    dplyr::select(Inoculum,extra_treatment_groups,x)
+
+    }
+  }else{
+    if(use_pidiq=="Y"){
+      filtered_df_fullsample <- filtered_df_fullsample %>%
+      dplyr::select(Inoculum,extra_treatment_groups,Arcsine.transformed.data)
+
+      filtered_df_suspects <- filtered_df_suspects %>%
+      dplyr::select(Inoculum,extra_treatment_groups,Arcsine.transformed.data)
+    }else{
+    stop("No data to plot")
+  }}
+
+```
+
+
+#significance groups
+```{r}
+
+for(i in 1:length(extra_treatment_groups)){
+  filtered_df_fullsample[,extra_treatment_groups[i]] <- as.factor(filtered_df_fullsample[,extra_treatment_groups[i]])
+  filtered_df_suspects[,extra_treatment_groups[i]] <- as.factor(filtered_df_suspects[,extra_treatment_groups[i]])
+  }
+
+#data_subset_fullsample_agg$OD <- as.numeric(data_subset_fullsample_agg$OD)
+
+
+#ensure that the specified extra_treatment_groups actually have different levels
+extra_treatment_groups <- extra_treatment_groups[length(unique(filtered_df_fullsample[,extra_treatment_groups]))>1]
+
+if(length(extra_treatment_groups)>0){
+  interaction_terms <- paste("Inoculum", extra_treatment_groups, sep = "*", collapse = "+")
+  }else{
+    print("removing extra treatment groups, as there is only one level for all specified")
+    interaction_terms <- "Inoculum"
+  }
+formula <- as.formula(paste("x ~", interaction_terms))
+model <- aov(formula, data = filtered_df_fullsample)
+summary(model)
+
+tukey_result <- TukeyHSD(model)
+cld <- multcompLetters4(model,tukey_result)
+cld
+
+
+if(length(extra_treatment_groups)>0){
+  interaction_group <- paste('Inoculum', extra_treatment_groups, sep = ':')
+  Letters <- cld[[interaction_group]]$Letters
+  print(Letters)
+  }else{
+    print("No extra treatment groups to compare")
+    Letters <- cld$Inoculum$Letters
+  }
+  print(Letters)
+
+```
+# interaction_group <- paste('Inoculum', extra_treatment_groups, sep = ':')
+# Letters <- cld[[interaction_group]]$Letters
+# print(Letters)
+
+
+
+
+```{r}
+
+filtered_df_fullsample$box_colour <- ifelse(data_subset_fullsample_agg$Inoculum=="PtoDC3000::EV","gold",ifelse(data_subset_fullsample_agg$Inoculum=="D36E::EV","darkgreen","grey"))
+filtered_df_suspects$box_colour <- ifelse(data_subset_suspects_agg$Inoculum=="PtoDC3000::EV","gold",ifelse(data_subset_suspects_agg$Inoculum=="D36E::EV","darkgreen","grey"))
+
+filtered_df_fullsample$point_colour <- 'black'
+filtered_df_suspects$point_colour <- 'red'
+
+treatment_order <- c("D36E::EV", 
+                     unique(as.character(filtered_df_fullsample$Inoculum)[filtered_df_fullsample$Inoculum!="PtoDC3000::EV"&filtered_df_fullsample$Inoculum!="D36E::EV"]), 
+                     "PtoDC3000::EV")
+
+factor_Letters <- factor(names(Letters), levels = desired_order)
+ordered_Letters <- Letters[order(factor_Letters)]
+
+
+
+filtered_df_fullsample <- filtered_df_fullsample[order(factor(filtered_df_fullsample$Inoculum, levels = treatment_order)),]
+filtered_df_suspects <- filtered_df_suspects[order(factor(filtered_df_suspects$Inoculum, levels = treatment_order)),]
+
+
+
+anova_data <- summary(model)
+# # Calculate p-value from the ANOVA result
+p_value <- anova_data[[1]]$Pr[1]
+
+if(round(p_value,1)=="0"){
+   for(i in 1:20){
+      if(round(p_value,i)!=0){
+         round_lvl <- i
+         break()
+      }
+   }
+}else{
+   round_lvl <- 1
+}
+
+
+# print("date infected")
+# print(unique(as.Date(data_subset$Date.infected[data_subset$Flat==flat_id])))
+
+# print("date harvested")
+# harvest_date <- unique(paste0(
+#    substring(unique(as.Date(data_subset$Date.infected[data_subset$Flat==flat_id])),0,8),
+#    as.character(as.numeric(data_subset$Days.infected.at.time.of.harvest) + as.numeric(substring(unique(as.Date(data_subset$Date.infected[data_subset$Flat==flat_id])),9,nchar(as.character((unique(as.Date(data_subset$Date.infected[data_subset$Flat==flat_id]))))))))
+# ))
+# print(harvest_date)
+
+
+
+
+```
+
+
+
+
+#plot the GA data
+```{r}
+
+#ordered_Letters
+
+the_dpi <- ifelse(length(unique(data_subset$Days.infected.at.time.of.harvest))==1,unique(data_subset$Days.infected.at.time.of.harvest),paste(unique(data_subset$Days.infected.at.time.of.harvest),collapse=", "))
+
+color_mapping <- c("darkgreen",rep("grey",length(unique(filtered_df_fullsample$Inoculum))-2),"gold")
+
+filtered_df_fullsample$Inoculum <- factor(filtered_df_fullsample$Inoculum, levels = treatment_order)
+
+
+plot <- ggplot(filtered_df_fullsample, aes(x=Inoculum, y=x)) +
+  geom_boxplot(aes(fill=Inoculum),outlier.shape = NA) +
+  scale_fill_manual(values = color_mapping) +
+  geom_point(aes(color=Inoculum), position=position_jitterdodge(), size=3) +
+  scale_color_manual(values = rep("black",nrow(filtered_df_fullsample))) +
+#   geom_text(data = data.frame(x = unique(filtered_df_fullsample$Inoculum), y = a$stats[nrow(a$stats),], Letters = ordered_Letters),
+#             aes(x = x, y = y+0.3, label = Letters), color = "black") +
+geom_text(data = data.frame(x = levels(filtered_df_fullsample$Inoculum), Letters = ordered_Letters),
+            aes(x = x, y = (max(filtered_df_fullsample$x)+0.4), label = Letters), color = "black", size=8) +
+
+  xlab("Treatment") +
+  ylab("log(CFU/cm^2)") +
+  ylim(0, max(filtered_df_fullsample$x) + 1.0) +
+  labs(
+    title = sprintf("Flat %s Bacterial fitness results at %s dpi", paste(flat_id,collapse=", "), the_dpi),
+    subtitle = paste("p =", round(p_value, round_lvl))
+  ) + 
+  theme(
+    axis.title.x = element_text(size = 20),
+    axis.title.y = element_text(size = 20),
+    plot.title = element_text(size = 20),
+    plot.subtitle = element_text(size = 20),
+    axis.text = element_text(size = 20),
+    legend.position = "none"
+  )
+
+plot <- plot +
+  geom_point(data = filtered_df_suspects, color="red", position = position_jitter(), alpha = 1, size = 3.0)
+plot
+
+```
+
+#save the plot
+```{r}
+Plot_fp <- "your filepath to save the plot here"
+
+ggsave(Plot_fp, plot, width = 10, height = 10, units = "in", dpi = 300)
+
+```
+
+#plot the Pidiq data
+```{r}
+
+#First recalculate the significance groups using the combined data (no need to remove plants with insufficient material, as this is not relevant for Pidiq)
+#we'll still plot those plants as red data points
+the_dpi <- ifelse(length(unique(data_subset$Days.infected.at.time.of.harvest))==1,unique(data_subset$Days.infected.at.time.of.harvest),paste(unique(data_subset$Days.infected.at.time.of.harvest),collapse=", "))
+
+color_mapping <- c("darkgreen",rep("grey",length(unique(filtered_df_fullsample$Inoculum))-2),"gold")
+
+combined_sets <- rbind(filtered_df_fullsample,filtered_df_suspects)
+combined_sets$Inoculum <- factor(combined_sets$Inoculum, levels = treatment_order)
+
+
+formula <- as.formula(paste("Arcsine.transformed.data ~", interaction_terms))
+model <- aov(formula, data = combined_sets)
+summary(model)
+
+tukey_result <- TukeyHSD(model)
+cld <- multcompLetters4(model,tukey_result)
+cld
+
+
+if(length(extra_treatment_groups)>0){
+  interaction_group <- paste('Inoculum', extra_treatment_groups, sep = ':')
+  Letters <- cld[[interaction_group]]$Letters
+  print(Letters)
+  }else{
+    print("No extra treatment groups to compare")
+    Letters <- cld$Inoculum$Letters
+  }
+  print(Letters)
+
+
+treatment_order <- c("D36E::EV", unique(filtered_df_fullsample$Inoculum[filtered_df_fullsample$Inoculum!="PtoDC3000::EV"&filtered_df_fullsample$Inoculum!="D36E::EV"]), "PtoDC3000::EV")
+factor_Letters <- factor(names(Letters), levels = desired_order)
+ordered_Letters <- Letters[order(factor_Letters)]
+
+anova_data <- summary(model)
+# # Calculate p-value from the ANOVA result
+p_value <- anova_data[[1]]$Pr[1]
+
+if(round(p_value,1)=="0"){
+   for(i in 1:20){
+      if(round(p_value,i)!=0){
+         round_lvl <- i
+         break()
+      }
+   }
+}else{
+   round_lvl <- 1
+}
+
+
+
+
+plot <- ggplot(combined_sets, aes(x=Inoculum, y=Arcsine.transformed.data)) +
+  geom_boxplot(aes(fill=Inoculum),outlier.shape = NA) +
+#   geom_point(data=filtered_df_fullsample, position=position_jitter(), size=3) +
+#     scale_color_manual(values = rep("black",nrow(filtered_df_fullsample)))+
+  scale_fill_manual(values = color_mapping) +
+#   geom_text(data = data.frame(x = unique(combined_sets$Inoculum), y = a$stats[nrow(a$stats),], Letters = ordered_Letters),
+#             aes(x = x, y = y+0.3, label = Letters), color = "black") +
+geom_text(data = data.frame(x = levels(combined_sets$Inoculum), Letters = ordered_Letters),
+            aes(x = x, y = (max(combined_sets$Arcsine.transformed.data)+0.1), label = Letters), color = "black", size=8) +
+
+  xlab("Treatment") +
+  ylab("Arcsin(% yellow)") +
+  ylim(0, max(combined_sets$Arcsine.transformed.data) + 0.2) +
+  labs(
+    title = sprintf("Flat %s Bacterial fitness results at %s dpi", paste(flat_id,collapse=", "), the_dpi),
+    subtitle = paste("p =", round(p_value, round_lvl))
+  ) + 
+  theme(
+    axis.title.x = element_text(size = 20),
+    axis.title.y = element_text(size = 20),
+    plot.title = element_text(size = 20),
+    plot.subtitle = element_text(size = 20),
+    axis.text = element_text(size = 20),
+    legend.position = "none"
+  )
+  plot
+plot <- plot +
+    geom_point(data=filtered_df_fullsample, position=position_jitter(), size=3) +
+    scale_color_manual(values = rep("black",nrow(filtered_df_fullsample))) +
+    geom_point(data = filtered_df_suspects, color="red", position = position_jitter(), alpha = 1, size = 3.0)
+
+plot  
+
+```
+
+
+#save the Pidiq plot
+```{r}
+
+Plot_fp <- "your filepath to save the plot here"
+ggsave(Plot_fp, plot, width = 10, height = 10, units = "in", dpi = 300)
+
+```
+
+#plot Pidiq by GA
+```{r}
+install.packages("ellipse")
+library(ellipse)
+color_sequence <- colorRampPalette(c("darkgreen", "gold"))(100)
+
+#color_mapping <- c("darkgreen",rep("grey",length(unique(filtered_df_fullsample$Inoculum))-2),"gold")
+#pidiq_colour <- color_sequence[as.numeric(100*round(filtered_df_fullsample$Arcsine.transformed.data,2))]
+
+##filtered_df_fullsample$pidiq_colour <- color_sequence[as.numeric(cut(filtered_df_fullsample$Arcsine.transformed.data, breaks = 100))]
+filtered_df_fullsample$pidiq_colour <- color_sequence[as.numeric(100*round(filtered_df_fullsample$Arcsine.transformed.data,2))]
+filtered_df_suspects$pidiq_colour <- color_sequence[as.numeric(100*round(filtered_df_suspects$Arcsine.transformed.data,2))]
+combined_sets$pidiq_colour <- color_sequence[as.numeric(100*round(combined_sets$Arcsine.transformed.data,2))]
+
+
+
+
+mean_pidiqs <- combined_sets %>%
+    group_by(Inoculum) %>%
+    summarise(mean_pidiq = 100*round(mean(Arcsine.transformed.data),2))
+
+mean_pidiqs_colours <- color_sequence[as.numeric(mean_pidiqs$mean_pidiq)]
+
+combined_sets$color <- mean_pidiqs_colours[as.numeric(as.factor(combined_sets$Inoculum))]
+
+
+plot <- ggplot(combined_sets, aes(x=Arcsine.transformed.data, y=x)) +
+    geom_point(data=filtered_df_suspects, size=8, color="red", shape=19)+
+
+  xlab("Asin(% yellow)") +
+  ylab("log(CFU/cm^2)") +
+  ylim(0, max(combined_sets$x) + 0.5) +
+  labs(
+    title = sprintf("Flat %s Bacterial fitness results at %s dpi", paste(flat_id,collapse=", "), the_dpi),
+    subtitle = paste("p =", round(p_value, round_lvl))
+  ) + 
+  theme(
+    axis.title.x = element_text(size = 20),
+    axis.title.y = element_text(size = 20),
+    plot.title = element_text(size = 20),
+    plot.subtitle = element_text(size = 20),
+    axis.text = element_text(size = 20),
+    legend.text = element_text(size = 20)
+
+  )
+
+plot
+
+plot<- plot+  geom_point(aes(shape=Inoculum), size=5, color=pidiq_colour) +
+  #stat_ellipse(aes(group=Inoculum), level=0.95, geom="path") +
+stat_ellipse(aes(group=Inoculum, fill=Inoculum, color=Inoculum), level=0.95, geom="polygon", alpha=0.1) +
+scale_fill_manual(values = mean_pidiqs_colours) +
+scale_color_manual(values = rep("grey",length(unique(combined_sets$Inoculum))))
+
+plot
+
+
+```
+
+
+#save the Pidiq x GA plot
+```{r}
+
+Plot_fp <- "your filepath to save the plot here"
+ggsave(Plot_fp, plot, width = 10, height = 10, units = "in", dpi = 300)
+
+```
