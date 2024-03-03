@@ -1,6 +1,1 @@
-renv
-renv.lock
-datasheets
-figures
-522_3dpi_plots.R
-MockGA_pipetting.R
+data/
