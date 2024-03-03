@@ -1,13 +1,15 @@
+init
 
-#init
+rm(list=ls())
 
 #the list of R packages needed for this project
-list_of_packages <- c("xlsx","rgl","htmlwidgets","vegan","igraph")
+list_of_packages <- c("xlsx","rgl","htmlwidgets","vegan","igraph","multcompView")
 
 #check to see if packages are installed, if not, install them
 lapply(list_of_packages, function(pkg) {
   if (!require(pkg, character.only = TRUE)) {
     install.packages(pkg, dependencies = TRUE)
+    #renv::install(pkg, dependencies = TRUE)
     library(pkg, character.only = TRUE)
   }
 })
@@ -25,3 +27,6 @@ if (all(unlist(loaded_packages))) {
   stop("One or more packages failed to load")
 }
 
+#source the fxn repo and config files
+source('src/fxn_repo.R')
+source("src/plotting_prms.r")
