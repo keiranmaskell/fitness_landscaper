@@ -1,0 +1,64 @@
+---
+title: "Treatment randomizer"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+#input how many plants you have across all flats, 
+#and then input your treatment groups as named vectors
+```{r}
+nbiol_replicates <- 131
+biol_rep_vec <- c(1:nbiol_replicates)
+
+treatment_groups <- list(
+    "Strain" = c("Strain1","Strain2"),
+    "Quantitative_treatment_variable" = c(0.01,0.1,0.5,2.0),
+    "Categorical_treatment_Variable" = c("category1","category2")
+)
+
+```
+
+```{r}
+
+#generate all possible combinations of treatments
+treatments <- expand.grid(treatment_groups)
+
+#figure out how many replicates you can have per treatment
+#where every treatment is repeated the same number of times
+#ignore the extras for now
+repnum_balanced <- nbiol_replicates %/% nrow(treatments)
+
+#repeat the treatments the same number of times
+treatments_repeated <- treatments[rep(seq_len(nrow(treatments)), each = repnum_balanced), ]
+
+#randomly sample the plants
+treatment_assignment_balanced <- sample(1:nbiol_replicates, (nbiol_replicates-nbiol_replicates %% nrow(treatments)), replace=FALSE)
+
+#assign the treatments to the plants
+treatments_repeated$plant <- treatment_assignment_balanced
+
+
+#assign leftover biological replicates to treatments
+leftover <- nbiol_replicates %% nrow(treatments)
+treatment_assignment_leftover <- biol_rep_vec[!(biol_rep_vec %in% treatment_assignment_balanced)]
+extra_treatments <- treatments[sample(nrow(treatments), leftover), ]
+extra_treatments$plant <- treatment_assignment_leftover
+
+#combine the two dataframes
+treatment_assignment_total <- rbind(treatments_repeated, extra_treatments)
+rownames(treatment_assignment_total) <- 1:nrow(treatment_assignment_total)
+
+
+treatment_assignment_total <- treatment_assignment_total[order(treatment_assignment_total$plant,decreasing=FALSE),]
+```
+
+#generate an excel worksheet with all the treatment combinations
+```{r}
+your_working_directory <- "paste/filepath/here"
+
+write.xlsx(treatment_assignment_total, sprintf("%s/treatment_assignment.xlsx",your_working_directory))
+```
