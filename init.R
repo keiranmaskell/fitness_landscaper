@@ -3,7 +3,7 @@ init
 rm(list=ls())
 
 #the list of R packages needed for this project
-list_of_packages <- c("xlsx","rgl","htmlwidgets","vegan","igraph","multcompView")
+list_of_packages <- c("xlsx","rgl","htmlwidgets","vegan","igraph","multcompView","ellipse")
 
 #check to see if packages are installed, if not, install them
 lapply(list_of_packages, function(pkg) {
